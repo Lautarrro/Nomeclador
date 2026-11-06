@@ -1,0 +1,143 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Buscar prácticas";
+    var es = System.Globalization.CultureInfo.GetCultureInfo("es-AR");
+    string U(decimal? d) => d is null ? "" : d.Value.ToString("0.##", es);
+    string? grupoActual = null;
+}
+
+<div class="tarjeta mb-3">
+    <form method="get" class="row g-2 align-items-end" id="filtros">
+        <div class="col-12 col-lg-4">
+            <label for="q" class="form-label small mb-1">Buscar por código o descripción</label>
+            <input id="q" name="q" value="@Model.Q" class="form-control" placeholder="ej. 01.02 · cesárea · amigdalectomía" autofocus />
+        </div>
+        <div class="col-6 col-lg-3">
+            <label for="seccion" class="form-label small mb-1">Capítulo</label>
+            <select id="seccion" name="seccion" class="form-select" onchange="this.form.grupo.value='';this.form.submit()">
+                <option value="">Todos</option>
+                @foreach (var s in Model.Secciones)
+                {
+                    <option value="@s.Codigo" selected="@(s.Codigo == Model.Seccion)">@s.Codigo · @s.Nombre</option>
+                }
+            </select>
+        </div>
+        <div class="col-6 col-lg-2">
+            <label for="grupo" class="form-label small mb-1">Grupo</label>
+            <select id="grupo" name="grupo" class="form-select" disabled="@(Model.GruposSeccion.Count == 0)" onchange="this.form.submit()">
+                <option value="">Todos</option>
+                @foreach (var g in Model.GruposSeccion)
+                {
+                    <option value="@g.Codigo" selected="@(g.Codigo == Model.Grupo)">@g.Codigo · @g.Nombre</option>
+                }
+            </select>
+        </div>
+        <div class="col-6 col-lg-1">
+            <label for="estado" class="form-label small mb-1">Estado</label>
+            <select id="estado" name="estado" class="form-select" onchange="this.form.submit()">
+                <option value="vigentes" selected="@(Model.Estado == "vigentes")">Vigentes</option>
+                <option value="nuevos" selected="@(Model.Estado == "nuevos")">Nuevos PMO</option>
+                <option value="eliminados" selected="@(Model.Estado == "eliminados")">Eliminados</option>
+                <option value="todos" selected="@(Model.Estado == "todos")">Todos</option>
+            </select>
+        </div>
+        <div class="col-6 col-lg-2">
+            <label for="juego" class="form-label small mb-1">Juego de valores</label>
+            <select id="juego" name="juego" class="form-select" onchange="this.form.submit()">
+                @foreach (var j in Model.Juegos)
+                {
+                    <option value="@j.Id" selected="@(j.Id == Model.JuegoActual?.Id)">@j.Nombre</option>
+                }
+            </select>
+        </div>
+        <div class="col-12 d-flex gap-3 align-items-center">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="conValores" name="conValores" value="true" checked="@Model.ConValores" onchange="this.form.submit()" />
+                <label class="form-check-label small" for="conValores">Solo con unidades</label>
+            </div>
+            <button class="btn btn-primary btn-sm" type="submit">Buscar</button>
+            <a class="btn btn-outline-secondary btn-sm" asp-page="/Index">Limpiar</a>
+            <span class="ms-auto small text-muted">@Model.Total resultado@(Model.Total == 1 ? "" : "s")</span>
+        </div>
+    </form>
+</div>
+
+<div class="tarjeta p-0">
+    <div class="table-responsive">
+        <table class="table table-sm table-hover mb-0 tabla-nomenclador">
+            <thead class="table-light">
+                <tr>
+                    <th>Código</th>
+                    <th>Descripción</th>
+                    <th class="num" title="Unidades del especialista">Esp. U</th>
+                    <th class="num" title="Cantidad de ayudantes × unidades">Ayud. U</th>
+                    <th class="num" title="Unidades del anestesista">Anest. U</th>
+                    <th class="num" title="Unidades de gasto">Gasto U</th>
+                    <th class="num">Total $</th>
+                    <th class="acciones"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Resultados.Count == 0)
+                {
+                    <tr><td colspan="8" class="text-center text-muted py-4">No hay prácticas que coincidan con la búsqueda.</td></tr>
+                }
+                @foreach (var p in Model.Resultados)
+                {
+                    if (p.GrupoCodigo != grupoActual)
+                    {
+                        grupoActual = p.GrupoCodigo;
+                        <tr class="encabezado-grupo"><td colspan="8">@p.GrupoCodigo · @p.Grupo?.Nombre <span class="text-muted fw-normal small">(@p.Grupo?.Seccion?.Nombre)</span>
+                            @if (!string.IsNullOrEmpty(p.Grupo?.Nota)) { <div class="nota fw-normal mt-1">@p.Grupo.Nota</div> }
+                        </td></tr>
+                    }
+                    var total = Calculadora.TotalRapido(p, Model.Valores);
+                    <tr class="@(p.Estado == "E" ? "eliminada" : "")">
+                        <td class="codigo">
+                            @p.Codigo
+                            @if (p.Estado == "N") { <span class="badge text-bg-info" title="Incorporado por el P.M.O.">Nuevo</span> }
+                            @if (p.Estado == "E") { <span class="badge text-bg-secondary">Eliminado</span> }
+                        </td>
+                        <td>
+                            @p.Descripcion
+                            @if (!string.IsNullOrEmpty(p.Nota))
+                            {
+                                <details class="nota mt-1"><summary>Nota / norma</summary>@p.Nota</details>
+                            }
+                        </td>
+                        <td class="num">@U(p.UEspecialista)</td>
+                        <td class="num">@(p.UAyudante is null ? "" : $"{p.AyudantesCantidad ?? 1} × {U(p.UAyudante)}")</td>
+                        <td class="num">@U(p.UAnestesista)</td>
+                        <td class="num">@U(p.UGasto)</td>
+                        <td class="num fw-semibold">@(total?.ToString("N2", es) ?? "—")</td>
+                        <td class="acciones text-end">
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-agregar="@p.Codigo" title="Agregar a la calculadora">+ Calcular</button>
+                            @if (User.EsAdmin())
+                            {
+                                <a class="btn btn-sm btn-link" asp-page="/Admin/PracticaEditar" asp-route-id="@p.Id">Editar</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (Model.Paginas > 1)
+{
+    <nav class="mt-3" aria-label="Páginas">
+        <ul class="pagination pagination-sm justify-content-center">
+            <li class="page-item @(Model.Pagina == 1 ? "disabled" : "")">
+                <a class="page-link" asp-page="/Index" asp-all-route-data="Model.RutaCon(Model.Pagina - 1)">Anterior</a>
+            </li>
+            <li class="page-item disabled"><span class="page-link">Página @Model.Pagina de @Model.Paginas</span></li>
+            <li class="page-item @(Model.Pagina == Model.Paginas ? "disabled" : "")">
+                <a class="page-link" asp-page="/Index" asp-all-route-data="Model.RutaCon(Model.Pagina + 1)">Siguiente</a>
+            </li>
+        </ul>
+    </nav>
+}
+
+<p class="small text-muted mt-2">Valores con el juego <strong>@Model.JuegoActual?.Nombre</strong>. Total = honorarios (especialista + ayudantes + anestesista) + gastos, al 100%.</p>

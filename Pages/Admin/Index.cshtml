@@ -1,0 +1,59 @@
+@page
+@model Nomenclador.Web.Pages.Admin.IndexModel
+@{ ViewData["Title"] = "Administración"; }
+
+<h1 class="h4 mb-3">Administración</h1>
+
+<div class="row g-3 mb-3">
+    <div class="col-6 col-md-3"><div class="tarjeta"><div class="small text-muted">Prácticas</div><div class="fs-4 fw-bold">@Model.Practicas</div></div></div>
+    <div class="col-6 col-md-3"><div class="tarjeta"><div class="small text-muted">Con unidades</div><div class="fs-4 fw-bold">@Model.ConValores</div></div></div>
+    <div class="col-6 col-md-3"><div class="tarjeta"><div class="small text-muted">Editadas por admin</div><div class="fs-4 fw-bold">@Model.EditadasAdmin</div></div></div>
+    <div class="col-6 col-md-3"><div class="tarjeta"><div class="small text-muted">Usuarios activos</div><div class="fs-4 fw-bold">@Model.Usuarios</div></div></div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6 col-xl-3">
+        <div class="tarjeta h-100">
+            <h2 class="h6">Prácticas</h2>
+            <p class="small text-muted">Agregar códigos nuevos o corregir los existentes. Para editar, buscá la práctica en el buscador y tocá “Editar”.</p>
+            <a class="btn btn-primary btn-sm" asp-page="/Admin/PracticaEditar">Nueva práctica</a>
+            <a class="btn btn-outline-primary btn-sm" asp-page="/Index" asp-route-estado="todos">Ir al buscador</a>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="tarjeta h-100">
+            <h2 class="h6">Juegos de valores</h2>
+            <p class="small text-muted">Valor en $ de cada unidad (galeno, gasto quirúrgico, etc.). Podés tener uno por convenio.</p>
+            <a class="btn btn-primary btn-sm" asp-page="/Admin/Juegos">Administrar</a>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="tarjeta h-100">
+            <h2 class="h6">Capítulos y grupos</h2>
+            <p class="small text-muted">Nombres y qué coeficientes usa cada capítulo. @Model.Secciones capítulos cargados.</p>
+            <a class="btn btn-primary btn-sm" asp-page="/Admin/Secciones">Administrar</a>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-3">
+        <div class="tarjeta h-100">
+            <h2 class="h6">Usuarios</h2>
+            <p class="small text-muted">Alta de usuarios, roles, reseteo de clave y bajas.</p>
+            <a class="btn btn-primary btn-sm" asp-page="/Admin/Usuarios">Administrar</a>
+        </div>
+    </div>
+</div>
+
+<div class="tarjeta mt-3">
+    <h2 class="h6">Archivo de carga inicial (NomencladorSeed.cs)</h2>
+    <p class="small text-muted mb-2">
+        El código fuente incluye todo el nomenclador en <code>Data/Seed/NomencladorSeed.cs</code> (@Model.EnSeed prácticas).
+        Al arrancar, el sistema agrega lo que falte sin pisar lo editado desde acá.
+        Podés descargar un <code>.cs</code> nuevo con el estado actual de la base para reemplazar ese archivo y que los cambios queden en el código.
+    </p>
+    <div class="d-flex gap-2">
+        <a class="btn btn-outline-primary btn-sm" asp-page-handler="Exportar">Descargar NomencladorSeed.cs</a>
+        <form method="post" asp-page-handler="Recargar" onsubmit="return confirm('¿Aplicar de nuevo la carga inicial? No se pisan las prácticas editadas por un admin.')">
+            <button class="btn btn-outline-secondary btn-sm">Reaplicar carga inicial</button>
+        </form>
+    </div>
+</div>

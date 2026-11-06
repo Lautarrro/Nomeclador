@@ -1,0 +1,68 @@
+@page
+@inject AppDb Db
+@using Microsoft.EntityFrameworkCore
+@{
+    ViewData["Title"] = "Cómo se calcula";
+    var juegos = await Db.JuegosValores.AsNoTracking().Include(j => j.Valores).Where(j => j.Activo)
+        .OrderByDescending(j => j.PorDefecto).ThenBy(j => j.Nombre).ToListAsync();
+    var secciones = await Db.Secciones.AsNoTracking().OrderBy(s => s.Codigo).ToListAsync();
+    var es = System.Globalization.CultureInfo.GetCultureInfo("es-AR");
+}
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="tarjeta">
+            <h1 class="h4">Cómo se calcula el valor de una prestación</h1>
+            <p>Cada práctica del Nomenclador Nacional tiene <strong>unidades arancelarias</strong>, no pesos. Las unidades miden la complejidad y no cambian con la inflación.</p>
+            <ul>
+                <li><strong>Unidades de honorarios</strong>: especialista, cada ayudante y anestesista.</li>
+                <li><strong>Unidades de gastos</strong>: costos materiales e institucionales (gasto quirúrgico, radiológico, bioquímico, etc.).</li>
+            </ul>
+            <p>Para pasarlas a pesos se multiplican por el <strong>Juego de Valores</strong> vigente, que tiene un coeficiente para honorarios y otro para gastos según el capítulo:</p>
+            <div class="p-3 mb-3 bg-light border rounded">
+                <strong>Total</strong> = (U. especialista + cant. ayudantes × U. ayudante + U. anestesista) × coef. honorarios
+                + U. gastos × coef. gastos
+            </div>
+            <h2 class="h6">Ejemplo — 01.01.01 (Juego I.N.O.S. 1991)</h2>
+            <table class="table table-sm w-auto">
+                <tr><td>Especialista</td><td class="num">531,75 U × $0,2326</td><td class="num">$ 123,69</td></tr>
+                <tr><td>Ayudantes</td><td class="num">2 × 106,50 U × $0,2326</td><td class="num">$ 49,54</td></tr>
+                <tr><td>Anestesista</td><td class="num">186 U × $0,2326</td><td class="num">$ 43,26</td></tr>
+                <tr><td>Gasto quirúrgico</td><td class="num">361 U × $0,4927</td><td class="num">$ 177,86</td></tr>
+                <tr class="fw-bold"><td>Total</td><td></td><td class="num">$ 394,35</td></tr>
+            </table>
+            <h2 class="h6">Varias prácticas</h2>
+            <p>En la calculadora cada práctica se suma con su propio detalle. Por defecto van al 100%; se puede ajustar el porcentaje de cada línea (por ejemplo, 50% en una segunda operación por la misma vía) y quitar ayudantes, anestesia o gastos cuando no correspondan.</p>
+            <h2 class="h6">Estados de los códigos</h2>
+            <ul class="mb-0">
+                <li><span class="badge text-bg-info">Nuevo</span> código incorporado por el P.M.O. (muchos no tienen unidades: se valorizan por convenio).</li>
+                <li><span class="badge text-bg-secondary">Eliminado</span> código dado de baja; se muestra solo como referencia.</li>
+            </ul>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        @foreach (var j in juegos)
+        {
+            <div class="tarjeta mb-3">
+                <h2 class="h6 mb-1">Juego de valores: @j.Nombre @if (j.PorDefecto) { <span class="badge text-bg-primary">Por defecto</span> }</h2>
+                @if (!string.IsNullOrEmpty(j.Descripcion)) { <p class="small text-muted">@j.Descripcion</p> }
+                <table class="table table-sm mb-0">
+                    @foreach (var d in Coeficientes.Todos)
+                    {
+                        var v = j.Valores.FirstOrDefault(x => x.Clave == d.Clave);
+                        <tr><td>@d.Nombre<div class="small text-muted">@d.Aplicacion</div></td><td class="num">@(v is null ? "—" : "$ " + v.Valor.ToString("0.####", es))</td></tr>
+                    }
+                </table>
+            </div>
+        }
+        <div class="tarjeta">
+            <h2 class="h6">Coeficientes por capítulo</h2>
+            <table class="table table-sm mb-0">
+                @foreach (var s in secciones)
+                {
+                    <tr><td class="codigo">@s.Codigo</td><td>@s.Nombre</td><td class="small">@Coeficientes.NombreDe(s.CoefHonorario) / @Coeficientes.NombreDe(s.CoefGasto)</td></tr>
+                }
+            </table>
+        </div>
+    </div>
+</div>

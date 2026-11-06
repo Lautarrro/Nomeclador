@@ -1,0 +1,80 @@
+@page "{id:int}"
+@model Nomenclador.Web.Pages.Foro.TemaModel
+@{
+    ViewData["Title"] = Model.Tema.Titulo;
+    var t = Model.Tema;
+    var miId = User.Id();
+}
+
+<nav class="small mb-2"><a asp-page="/Foro/Index">← Foro</a></nav>
+
+<div class="tarjeta mb-3" style="max-width: 1000px">
+    <div class="d-flex flex-wrap gap-2 align-items-start">
+        <div class="me-auto">
+            <h1 class="h4 mb-1">
+                @if (t.Fijado) { <span class="badge text-bg-warning align-middle">Fijado</span> }
+                @if (t.Cerrado) { <span class="badge text-bg-secondary align-middle">Cerrado</span> }
+                @t.Titulo
+            </h1>
+            <div class="small text-muted">@t.Categoria · por @t.Autor?.NombreCompleto · @t.CreadoUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+        </div>
+        @if (User.EsAdmin())
+        {
+            <form method="post" asp-page-handler="Moderar" asp-route-id="@t.Id" class="d-flex gap-1">
+                <button name="accion" value="fijar" class="btn btn-sm btn-outline-secondary">@(t.Fijado ? "Desfijar" : "Fijar")</button>
+                <button name="accion" value="cerrar" class="btn btn-sm btn-outline-secondary">@(t.Cerrado ? "Reabrir" : "Cerrar")</button>
+            </form>
+        }
+        @if (User.EsAdmin() || (t.AutorId == miId && t.Respuestas.Count == 0))
+        {
+            <form method="post" asp-page-handler="BorrarTema" asp-route-id="@t.Id" onsubmit="return confirm('¿Eliminar el tema y todas sus respuestas?')">
+                <button class="btn btn-sm btn-outline-danger">Eliminar</button>
+            </form>
+        }
+    </div>
+
+    @if (Model.Practica is { } p)
+    {
+        <div class="alert alert-light border mt-3 mb-0 py-2 small">
+            Práctica relacionada: <span class="codigo fw-semibold">@p.Codigo</span> — @p.Descripcion
+            <a asp-page="/Index" asp-route-q="@p.Codigo" class="ms-2">Ver en el buscador</a>
+            <button type="button" class="btn btn-sm btn-link" data-agregar="@p.Codigo">+ Calcular</button>
+        </div>
+    }
+
+    <div class="foro-cuerpo mt-3">@t.Cuerpo</div>
+</div>
+
+@foreach (var r in t.Respuestas)
+{
+    <div class="tarjeta mb-2 ms-md-4" style="max-width: 976px" id="r@(r.Id)">
+        <div class="d-flex small text-muted mb-1">
+            <span class="me-auto"><strong class="text-body">@r.Autor?.NombreCompleto</strong> · @r.CreadoUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+            @if (r.AutorId == miId || User.EsAdmin())
+            {
+                <form method="post" asp-page-handler="BorrarRespuesta" asp-route-id="@t.Id" asp-route-respuestaId="@r.Id" onsubmit="return confirm('¿Borrar esta respuesta?')">
+                    <button class="btn btn-sm btn-link text-danger p-0">Borrar</button>
+                </form>
+            }
+        </div>
+        <div class="foro-cuerpo">@r.Cuerpo</div>
+    </div>
+}
+
+<div id="fin"></div>
+@if (!t.Cerrado || User.EsAdmin())
+{
+    <div class="tarjeta mt-3 ms-md-4" style="max-width: 976px">
+        <form method="post" asp-page-handler="Responder" asp-route-id="@t.Id">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <label asp-for="Respuesta" class="form-label">Responder</label>
+            <textarea asp-for="Respuesta" class="form-control mb-2" rows="4"></textarea>
+            <span asp-validation-for="Respuesta" class="text-danger small d-block mb-2"></span>
+            <button class="btn btn-primary btn-sm">Enviar respuesta</button>
+        </form>
+    </div>
+}
+else
+{
+    <p class="text-muted small ms-md-4 mt-3">El tema está cerrado y no admite respuestas.</p>
+}

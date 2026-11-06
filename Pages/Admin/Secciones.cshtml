@@ -1,0 +1,69 @@
+@page
+@model Nomenclador.Web.Pages.Admin.SeccionesModel
+@{ ViewData["Title"] = "Capítulos y grupos"; }
+
+<div class="d-flex align-items-center mb-3">
+    <h1 class="h4 mb-0 me-auto">Capítulos y grupos</h1>
+    <a asp-page="/Admin/Index" class="btn btn-link btn-sm">← Administración</a>
+</div>
+
+<div class="tarjeta mb-3">
+    <form method="post" asp-page-handler="NuevaSeccion" class="row g-2 align-items-end">
+        <div class="col-auto"><label class="form-label small mb-1" for="ns-cod">Código</label><input id="ns-cod" name="codigo" class="form-control form-control-sm codigo" style="width: 70px" placeholder="14" /></div>
+        <div class="col"><label class="form-label small mb-1" for="ns-nom">Nombre del capítulo nuevo</label><input id="ns-nom" name="nombre" class="form-control form-control-sm" /></div>
+        <div class="col-auto"><button class="btn btn-sm btn-primary">Agregar capítulo</button></div>
+    </form>
+</div>
+
+@foreach (var s in Model.Secciones)
+{
+    <div class="tarjeta mb-3" id="s@(s.Codigo)">
+        <form method="post" asp-page-handler="GuardarSeccion" class="row g-2 align-items-end mb-2">
+            <input type="hidden" name="codigo" value="@s.Codigo" />
+            <div class="col-auto"><span class="codigo fs-5 fw-bold">@s.Codigo</span></div>
+            <div class="col-12 col-md"><label class="form-label small mb-1">Nombre</label><input name="nombre" value="@s.Nombre" class="form-control form-control-sm" /></div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small mb-1">Coef. honorarios</label>
+                <select name="coefHonorario" class="form-select form-select-sm">
+                    @foreach (var c in Coeficientes.Todos.Where(c => c.EsHonorario)) { <option value="@c.Clave" selected="@(c.Clave == s.CoefHonorario)">@c.Nombre</option> }
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label small mb-1">Coef. gastos</label>
+                <select name="coefGasto" class="form-select form-select-sm">
+                    @foreach (var c in Coeficientes.Todos.Where(c => !c.EsHonorario)) { <option value="@c.Clave" selected="@(c.Clave == s.CoefGasto)">@c.Nombre</option> }
+                </select>
+            </div>
+            <div class="col-auto"><button class="btn btn-sm btn-outline-primary">Guardar</button></div>
+        </form>
+        <details>
+            <summary class="small">@s.Grupos.Count grupos</summary>
+            <table class="table table-sm mt-2 mb-2">
+                @foreach (var g in s.Grupos)
+                {
+                    <tr>
+                        <td class="codigo" style="width: 80px">@g.Codigo</td>
+                        <td>
+                            <form method="post" asp-page-handler="GuardarGrupo" class="d-flex gap-2">
+                                <input type="hidden" name="codigo" value="@g.Codigo" />
+                                <div class="flex-grow-1">
+                                    <input name="nombre" value="@g.Nombre" class="form-control form-control-sm mb-1" aria-label="Nombre del grupo @g.Codigo" />
+                                    <textarea name="nota" class="form-control form-control-sm" rows="1" placeholder="Norma del grupo (opcional)" aria-label="Norma del grupo @g.Codigo">@g.Nota</textarea>
+                                </div>
+                                <button class="btn btn-sm btn-outline-secondary">Guardar</button>
+                            </form>
+                        </td>
+                        <td class="num small text-muted" style="width: 110px">@Model.PracticasPorGrupo.GetValueOrDefault(g.Codigo) prácticas</td>
+                        <td style="width: 120px"><a class="btn btn-sm btn-link" asp-page="/Admin/PracticaEditar" asp-route-grupo="@g.Codigo">+ Práctica</a></td>
+                    </tr>
+                }
+            </table>
+            <form method="post" asp-page-handler="NuevoGrupo" class="d-flex gap-2">
+                <input type="hidden" name="seccion" value="@s.Codigo" />
+                <input name="codigo" class="form-control form-control-sm codigo" style="width: 90px" placeholder="@(s.Codigo).NN" aria-label="Código de grupo nuevo" />
+                <input name="nombre" class="form-control form-control-sm" placeholder="Nombre del grupo nuevo" aria-label="Nombre del grupo nuevo" />
+                <button class="btn btn-sm btn-outline-primary text-nowrap">Agregar grupo</button>
+            </form>
+        </details>
+    </div>
+}

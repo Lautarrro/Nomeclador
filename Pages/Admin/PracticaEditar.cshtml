@@ -1,0 +1,75 @@
+@page "{id:int?}"
+@model Nomenclador.Web.Pages.Admin.PracticaEditarModel
+@{ ViewData["Title"] = Model.EsNueva ? "Nueva práctica" : $"Editar {Model.F.Codigo}"; }
+
+<div class="tarjeta" style="max-width: 900px">
+    <h1 class="h4 mb-3">@ViewData["Title"]</h1>
+    <form method="post">
+        <input type="hidden" asp-for="F.Id" />
+        <input type="hidden" asp-for="F.Version" />
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="row g-3">
+            <div class="col-sm-4">
+                <label asp-for="F.Codigo" class="form-label">Código</label>
+                <input asp-for="F.Codigo" class="form-control codigo" placeholder="00.00.00" list="grupos" />
+                <datalist id="grupos">
+                    @foreach (var g in Model.Grupos) { <option value="@(g.Codigo).">@g.Nombre</option> }
+                </datalist>
+                <span asp-validation-for="F.Codigo" class="text-danger small"></span>
+            </div>
+            <div class="col-sm-4">
+                <label asp-for="F.Estado" class="form-label">Estado</label>
+                <select asp-for="F.Estado" class="form-select">
+                    <option value="">Original</option>
+                    <option value="N">Nuevo (P.M.O.)</option>
+                    <option value="E">Eliminado</option>
+                </select>
+            </div>
+            <div class="col-sm-4">
+                <label asp-for="F.CoefGastoOverride" class="form-label">Coef. de gastos</label>
+                <select asp-for="F.CoefGastoOverride" class="form-select">
+                    <option value="">El del capítulo</option>
+                    @foreach (var c in Coeficientes.Todos.Where(c => !c.EsHonorario)) { <option value="@c.Clave">@c.Nombre</option> }
+                </select>
+            </div>
+            <div class="col-12">
+                <label asp-for="F.Descripcion" class="form-label">Descripción</label>
+                <textarea asp-for="F.Descripcion" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="F.Descripcion" class="text-danger small"></span>
+            </div>
+            <div class="col-6 col-md">
+                <label asp-for="F.UEspecialista" class="form-label">U. especialista</label>
+                <input asp-for="F.UEspecialista" class="form-control text-end" step="0.01" />
+            </div>
+            <div class="col-6 col-md">
+                <label asp-for="F.AyudantesCantidad" class="form-label">Cant. ayudantes</label>
+                <input asp-for="F.AyudantesCantidad" class="form-control text-end" />
+            </div>
+            <div class="col-6 col-md">
+                <label asp-for="F.UAyudante" class="form-label">U. por ayudante</label>
+                <input asp-for="F.UAyudante" class="form-control text-end" step="0.01" />
+            </div>
+            <div class="col-6 col-md">
+                <label asp-for="F.UAnestesista" class="form-label">U. anestesista</label>
+                <input asp-for="F.UAnestesista" class="form-control text-end" step="0.01" />
+            </div>
+            <div class="col-6 col-md">
+                <label asp-for="F.UGasto" class="form-label">U. gastos</label>
+                <input asp-for="F.UGasto" class="form-control text-end" step="0.01" />
+            </div>
+            <div class="col-12">
+                <label asp-for="F.Nota" class="form-label">Nota / norma</label>
+                <textarea asp-for="F.Nota" class="form-control" rows="3"></textarea>
+            </div>
+        </div>
+        <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <a asp-page="/Admin/Index" class="btn btn-link">Cancelar</a>
+            @if (!Model.EsNueva && Model.F.Estado != "E")
+            {
+                <button type="submit" asp-page-handler="Eliminar" class="btn btn-outline-danger ms-auto"
+                        onclick="return confirm('¿Marcar esta práctica como eliminada? Seguirá visible en el filtro “Eliminados”.')">Marcar como eliminada</button>
+            }
+        </div>
+    </form>
+</div>

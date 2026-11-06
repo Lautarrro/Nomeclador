@@ -1,0 +1,61 @@
+@page
+@model Nomenclador.Web.Pages.Admin.JuegosModel
+@{
+    ViewData["Title"] = "Juegos de valores";
+    var inv = System.Globalization.CultureInfo.InvariantCulture;
+}
+
+<div class="d-flex align-items-center mb-3">
+    <h1 class="h4 mb-0 me-auto">Juegos de valores</h1>
+    <a asp-page="/Admin/Index" class="btn btn-link btn-sm">← Administración</a>
+</div>
+<p class="small text-muted">Cada juego define cuántos pesos vale una unidad. Para cargar los valores de un convenio, duplicá un juego existente y cambiá los valores. El juego “por defecto” es el que se usa si el usuario no elige otro.</p>
+
+<div class="row g-3">
+@foreach (var j in Model.Juegos)
+{
+    <div class="col-lg-6">
+        <div class="tarjeta h-100 @(j.Activo ? "" : "opacity-75")">
+            <form method="post" asp-page-handler="Guardar">
+                <input type="hidden" name="id" value="@j.Id" />
+                <div class="d-flex gap-2 mb-2 align-items-center">
+                    <input name="nombre" value="@j.Nombre" class="form-control fw-semibold" aria-label="Nombre del juego" />
+                    @if (j.PorDefecto) { <span class="badge text-bg-primary">Por defecto</span> }
+                </div>
+                <input name="descripcion" value="@j.Descripcion" class="form-control form-control-sm mb-2" placeholder="Descripción (convenio, vigencia…)" aria-label="Descripción" />
+                <table class="table table-sm mb-2">
+                    @foreach (var d in Coeficientes.Todos)
+                    {
+                        var v = j.Valores.FirstOrDefault(x => x.Clave == d.Clave);
+                        <tr>
+                            <td><label for="v-@j.Id-@d.Clave">@d.Nombre</label><div class="small text-muted">@d.Aplicacion</div></td>
+                            <td style="width: 150px">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input id="v-@j.Id-@d.Clave" name="valores[@d.Clave]" value="@v?.Valor.ToString(inv)" class="form-control text-end" inputmode="decimal" />
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </table>
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                    <div class="form-check me-auto">
+                        <input class="form-check-input" type="checkbox" name="activo" value="true" id="act-@j.Id" checked="@j.Activo" disabled="@j.PorDefecto" />
+                        <label class="form-check-label small" for="act-@j.Id">Activo</label>
+                        @if (j.PorDefecto) { <input type="hidden" name="activo" value="true" /> }
+                    </div>
+                    <span class="small text-muted">Actualizado @j.ActualizadoUtc.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                    <button class="btn btn-sm btn-primary">Guardar</button>
+                </div>
+            </form>
+            <div class="d-flex gap-2 mt-2">
+                <form method="post" asp-page-handler="Duplicar" asp-route-id="@j.Id"><button class="btn btn-sm btn-outline-secondary">Duplicar</button></form>
+                @if (!j.PorDefecto)
+                {
+                    <form method="post" asp-page-handler="PorDefecto" asp-route-id="@j.Id"><button class="btn btn-sm btn-outline-secondary">Usar por defecto</button></form>
+                }
+            </div>
+        </div>
+    </div>
+}
+</div>

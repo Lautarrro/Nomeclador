@@ -1,0 +1,55 @@
+@page
+@model Nomenclador.Web.Pages.Admin.UsuariosModel
+@{ ViewData["Title"] = "Usuarios"; }
+
+<div class="d-flex align-items-center mb-3">
+    <h1 class="h4 mb-0 me-auto">Usuarios</h1>
+    <a asp-page="/Admin/Index" class="btn btn-link btn-sm">← Administración</a>
+</div>
+
+<div class="tarjeta mb-3">
+    <h2 class="h6">Nuevo usuario</h2>
+    <form method="post" asp-page-handler="Crear" class="row g-2 align-items-end">
+        <div class="col-sm-3"><label class="form-label small mb-1" for="nu-u">Usuario</label><input id="nu-u" name="nombreUsuario" class="form-control form-control-sm" placeholder="ej. mgomez" autocomplete="off" /></div>
+        <div class="col-sm-4"><label class="form-label small mb-1" for="nu-n">Nombre completo</label><input id="nu-n" name="nombreCompleto" class="form-control form-control-sm" /></div>
+        <div class="col-sm-2">
+            <label class="form-label small mb-1" for="nu-r">Rol</label>
+            <select id="nu-r" name="rol" class="form-select form-select-sm"><option value="@Roles.Usuario">Usuario</option><option value="@Roles.Admin">Admin</option></select>
+        </div>
+        <div class="col-sm-3"><button class="btn btn-sm btn-primary">Crear con clave temporal</button></div>
+    </form>
+</div>
+
+<div class="tarjeta p-0">
+    <table class="table table-sm mb-0 align-middle">
+        <thead class="table-light"><tr><th>Usuario</th><th>Nombre</th><th>Rol / estado</th><th>Último ingreso</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var u in Model.Usuarios)
+        {
+            <tr class="@(u.Activo ? "" : "text-muted")">
+                <td class="codigo">@u.NombreUsuario @if (u.DebeCambiarClave) { <span class="badge text-bg-warning" title="Tiene clave temporal">temporal</span> }</td>
+                <td>@u.NombreCompleto</td>
+                <td>
+                    <form method="post" asp-page-handler="Cambiar" asp-route-id="@u.Id" class="d-flex gap-2 align-items-center">
+                        <select name="rol" class="form-select form-select-sm w-auto" aria-label="Rol de @u.NombreUsuario">
+                            <option value="@Roles.Usuario" selected="@(u.Rol == Roles.Usuario)">Usuario</option>
+                            <option value="@Roles.Admin" selected="@(u.Rol == Roles.Admin)">Admin</option>
+                        </select>
+                        <div class="form-check mb-0">
+                            <input class="form-check-input" type="checkbox" name="activo" value="true" id="a-@u.Id" checked="@u.Activo" />
+                            <label class="form-check-label small" for="a-@u.Id">Activo</label>
+                        </div>
+                        <button class="btn btn-sm btn-outline-secondary">Guardar</button>
+                    </form>
+                </td>
+                <td class="small">@(u.UltimoIngresoUtc?.ToLocalTime().ToString("dd/MM/yyyy HH:mm") ?? "nunca")</td>
+                <td class="text-end">
+                    <form method="post" asp-page-handler="Resetear" asp-route-id="@u.Id" onsubmit="return confirm('¿Generar una clave temporal nueva para @u.NombreUsuario?')">
+                        <button class="btn btn-sm btn-link">Resetear clave</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

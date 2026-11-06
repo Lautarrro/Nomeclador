@@ -1,0 +1,53 @@
+:root {
+  --color-marca: #1f4e79;
+  --color-marca-claro: #e8f0f8;
+}
+
+html { font-size: 15px; }
+
+body { background: #f6f7f9; }
+
+.barra { background: var(--color-marca); }
+
+.contenido { max-width: 1400px; }
+
+.tarjeta {
+  background: #fff;
+  border: 1px solid #e3e6ea;
+  border-radius: .5rem;
+  padding: 1rem 1.25rem;
+}
+
+.tabla-nomenclador td, .tabla-nomenclador th { vertical-align: top; }
+.tabla-nomenclador .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tabla-nomenclador .codigo { white-space: nowrap; font-family: ui-monospace, Consolas, monospace; }
+.tabla-nomenclador tr.eliminada td { color: #888; text-decoration: line-through; }
+.tabla-nomenclador tr.eliminada td.acciones { text-decoration: none; }
+
+.num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.codigo { font-family: ui-monospace, Consolas, monospace; white-space: nowrap; }
+
+.nota { font-size: .85rem; color: #555; }
+
+.encabezado-grupo td {
+  background: var(--color-marca-claro) !important;
+  font-weight: 600;
+}
+
+.detalle-linea td { font-size: .9rem; }
+
+.foro-cuerpo { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.total-grande { font-size: 1.6rem; font-weight: 700; }
+
+.form-control:focus, .form-select:focus, .btn:focus-visible {
+  box-shadow: 0 0 0 .2rem rgba(31, 78, 121, .35);
+}
+
+@media print {
+  .no-imprimir, .barra, .btn, form .form-control, .acciones { display: none !important; }
+  body { background: #fff; }
+  .tarjeta { border: none; padding: 0; }
+  .solo-imprimir { display: block !important; }
+}
+.solo-imprimir { display: none; }

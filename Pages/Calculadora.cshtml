@@ -1,0 +1,208 @@
+@page
+@model CalculadoraModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@{
+    ViewData["Title"] = "Calculadora";
+    var token = Antiforgery.GetAndStoreTokens(HttpContext).RequestToken;
+}
+
+<div class="d-flex flex-wrap gap-2 align-items-end mb-3 no-imprimir">
+    <div>
+        <label for="juego" class="form-label small mb-1">Juego de valores</label>
+        <select id="juego" class="form-select">
+            @foreach (var j in Model.Juegos)
+            {
+                <option value="@j.Id">@j.Nombre</option>
+            }
+        </select>
+    </div>
+    <div class="flex-grow-1 position-relative" style="max-width: 560px">
+        <label for="buscar" class="form-label small mb-1">Agregar práctica</label>
+        <input id="buscar" class="form-control" placeholder="Código o descripción…" autocomplete="off"
+               role="combobox" aria-expanded="false" aria-controls="sugerencias" />
+        <div id="sugerencias" class="list-group position-absolute w-100 shadow-sm" style="z-index: 10" role="listbox"></div>
+    </div>
+    <button id="imprimir" class="btn btn-outline-secondary" type="button">Imprimir / PDF</button>
+    <button id="vaciar" class="btn btn-outline-danger" type="button">Vaciar</button>
+</div>
+
+<div class="solo-imprimir mb-3">
+    <h1 class="h4">Detalle de costos — Nomenclador Nacional</h1>
+    <div>Fecha: @DateTime.Now.ToString("dd/MM/yyyy HH:mm") · Usuario: @User.NombreVisible() · Juego de valores: <span id="juego-imprimir"></span></div>
+</div>
+
+<div class="tarjeta p-0">
+    <div class="table-responsive">
+        <table class="table table-sm mb-0 tabla-nomenclador" id="tabla">
+            <thead class="table-light">
+                <tr>
+                    <th>Código</th>
+                    <th>Práctica / rubro</th>
+                    <th class="num">Unidades</th>
+                    <th class="num">$ por unidad</th>
+                    <th class="num">Importe</th>
+                    <th class="num no-imprimir" style="width: 90px">%</th>
+                    <th class="num no-imprimir" style="width: 80px">Cant.</th>
+                    <th class="num">Total línea</th>
+                    <th class="acciones"></th>
+                </tr>
+            </thead>
+            <tbody id="cuerpo"></tbody>
+            <tfoot id="pie"></tfoot>
+        </table>
+    </div>
+</div>
+<p class="small text-muted mt-2 no-imprimir">
+    Cada práctica arranca al 100%. Cambiá el % (ej. 50% para una segunda cirugía por la misma vía) o la cantidad, y destildá los rubros que no correspondan.
+</p>
+
+@section Scripts {
+<script>
+(() => {
+    const token = '@token';
+    const cuerpo = document.getElementById('cuerpo');
+    const pie = document.getElementById('pie');
+    const selJuego = document.getElementById('juego');
+    const claveJuego = 'juego:' + (document.body.dataset.usuario || '');
+    if (localStorage.getItem(claveJuego)) selJuego.value = localStorage.getItem(claveJuego);
+    selJuego.addEventListener('change', () => { localStorage.setItem(claveJuego, selJuego.value); calcular(); });
+
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const $ = n => formatoPesos.format(n);
+    let pendiente = null;
+
+    async function calcular() {
+        const items = Carrito.leer();
+        document.getElementById('juego-imprimir').textContent = selJuego.selectedOptions[0]?.text || '';
+        if (items.length === 0) {
+            cuerpo.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No hay prácticas cargadas. Buscalas arriba o desde el buscador con “+ Calcular”.</td></tr>';
+            pie.innerHTML = '';
+            return;
+        }
+        pendiente?.abort();
+        pendiente = new AbortController();
+        let r;
+        try {
+            const resp = await fetch('?handler=Calcular', {
+                method: 'POST', signal: pendiente.signal,
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+                body: JSON.stringify({ juegoId: Number(selJuego.value) || null, lineas: items })
+            });
+            if (resp.status === 401 || resp.redirected) { location.reload(); return; }
+            if (!resp.ok) throw new Error(await resp.text());
+            r = await resp.json();
+        } catch (e) {
+            if (e.name === 'AbortError') return;
+            cuerpo.innerHTML = `<tr><td colspan="9" class="text-danger">Error al calcular: ${esc(e.message)}</td></tr>`;
+            return;
+        }
+        dibujar(items, r);
+    }
+
+    function dibujar(items, r) {
+        let html = '';
+        let iRes = 0;
+        items.forEach((it, i) => {
+            const l = r.lineas[iRes];
+            if (!l || l.codigo !== it.codigo) {
+                html += `<tr class="table-warning"><td class="codigo">${esc(it.codigo)}</td><td colspan="7">Código no encontrado en el nomenclador.</td>
+                    <td class="acciones text-end"><button class="btn btn-sm btn-link text-danger" data-quitar="${i}">Quitar</button></td></tr>`;
+                return;
+            }
+            iRes++;
+            html += `<tr class="table-light">
+                <td class="codigo fw-semibold">${esc(l.codigo)}</td>
+                <td class="fw-semibold">${esc(l.descripcion)}
+                    ${l.aviso ? `<div class="small text-danger">${esc(l.aviso)}</div>` : ''}
+                    <div class="small no-imprimir mt-1">
+                        <label class="me-2"><input type="checkbox" data-i="${i}" data-campo="ayudantes" ${it.ayudantes ? 'checked' : ''}> Ayudantes</label>
+                        <label class="me-2"><input type="checkbox" data-i="${i}" data-campo="anestesia" ${it.anestesia ? 'checked' : ''}> Anestesia</label>
+                        <label><input type="checkbox" data-i="${i}" data-campo="gastos" ${it.gastos ? 'checked' : ''}> Gastos</label>
+                    </div>
+                </td>
+                <td></td><td></td>
+                <td class="num">${$(l.subtotal)}</td>
+                <td class="num no-imprimir"><input type="number" class="form-control form-control-sm text-end" min="0" max="1000" step="1" value="${it.porcentaje}" data-i="${i}" data-campo="porcentaje" aria-label="Porcentaje"></td>
+                <td class="num no-imprimir"><input type="number" class="form-control form-control-sm text-end" min="1" max="99" step="1" value="${it.cantidad}" data-i="${i}" data-campo="cantidad" aria-label="Cantidad"></td>
+                <td class="num fw-bold">${$(l.total)}${(l.porcentaje != 100 || l.cantidad != 1) ? `<div class="small text-muted fw-normal">${l.porcentaje}% × ${l.cantidad}</div>` : ''}</td>
+                <td class="acciones text-end"><button class="btn btn-sm btn-link text-danger" data-quitar="${i}">Quitar</button></td>
+            </tr>`;
+            for (const ru of l.rubros) {
+                html += `<tr class="detalle-linea">
+                    <td></td>
+                    <td class="ps-4">${esc(ru.concepto)} <span class="text-muted small">(${esc(ru.coeficiente)})</span></td>
+                    <td class="num">${formatoNumero.format(ru.unidades)}</td>
+                    <td class="num">${formatoNumero.format(ru.valorUnidad)}</td>
+                    <td class="num">${$(ru.importe)}</td>
+                    <td class="no-imprimir"></td><td class="no-imprimir"></td><td></td><td></td>
+                </tr>`;
+            }
+        });
+        cuerpo.innerHTML = html;
+        pie.innerHTML = `
+            <tr><td colspan="4" class="text-end">Total honorarios</td><td></td><td class="no-imprimir"></td><td class="no-imprimir"></td><td class="num">${$(r.totalHonorarios)}</td><td></td></tr>
+            <tr><td colspan="4" class="text-end">Total gastos</td><td></td><td class="no-imprimir"></td><td class="no-imprimir"></td><td class="num">${$(r.totalGastos)}</td><td></td></tr>
+            <tr><td colspan="4" class="text-end fw-bold">TOTAL</td><td></td><td class="no-imprimir"></td><td class="no-imprimir"></td><td class="num total-grande">${$(r.total)}</td><td></td></tr>`;
+    }
+
+    cuerpo.addEventListener('change', e => {
+        const el = e.target;
+        if (!el.dataset.campo) return;
+        const items = Carrito.leer();
+        const it = items[Number(el.dataset.i)];
+        if (!it) return;
+        if (el.type === 'checkbox') it[el.dataset.campo] = el.checked;
+        else {
+            const v = Number(el.value);
+            it[el.dataset.campo] = el.dataset.campo === 'cantidad' ? Math.max(1, Math.round(v) || 1) : Math.max(0, v || 0);
+        }
+        Carrito.guardar(items);
+        calcular();
+    });
+
+    cuerpo.addEventListener('click', e => {
+        const b = e.target.closest('[data-quitar]');
+        if (!b) return;
+        const items = Carrito.leer();
+        items.splice(Number(b.dataset.quitar), 1);
+        Carrito.guardar(items);
+        calcular();
+    });
+
+    document.getElementById('vaciar').addEventListener('click', () => {
+        if (confirm('¿Vaciar todas las prácticas de la calculadora?')) { Carrito.guardar([]); calcular(); }
+    });
+    document.getElementById('imprimir').addEventListener('click', () => window.print());
+
+    // Autocompletar
+    const buscar = document.getElementById('buscar');
+    const sug = document.getElementById('sugerencias');
+    let t;
+    buscar.addEventListener('input', () => {
+        clearTimeout(t);
+        t = setTimeout(async () => {
+            const q = buscar.value.trim();
+            if (q.length < 2) { sug.innerHTML = ''; buscar.setAttribute('aria-expanded', 'false'); return; }
+            const lista = await (await fetch('?handler=Buscar&q=' + encodeURIComponent(q))).json();
+            sug.innerHTML = lista.map(p => `<button type="button" class="list-group-item list-group-item-action small" role="option" data-codigo="${esc(p.codigo)}">
+                <span class="codigo fw-semibold">${esc(p.codigo)}</span> ${esc(p.descripcion)} ${p.estado === 'E' ? '<span class="badge text-bg-secondary">Eliminado</span>' : ''}</button>`).join('')
+                || '<div class="list-group-item small text-muted">Sin resultados</div>';
+            buscar.setAttribute('aria-expanded', 'true');
+        }, 200);
+    });
+    sug.addEventListener('click', e => {
+        const b = e.target.closest('[data-codigo]');
+        if (!b) return;
+        Carrito.agregar(b.dataset.codigo);
+        buscar.value = ''; sug.innerHTML = ''; buscar.focus();
+        calcular();
+    });
+    buscar.addEventListener('keydown', e => {
+        if (e.key === 'Escape') { sug.innerHTML = ''; }
+        if (e.key === 'Enter') { e.preventDefault(); sug.querySelector('[data-codigo]')?.click(); }
+    });
+
+    calcular();
+})();
+</script>
+}

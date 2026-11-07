@@ -184,7 +184,7 @@ public static class Coeficientes
         new(PensionSanatorial, "Pensión sanatorial", false, 0.5634m, "Hotelería hospitalaria (capítulos 40, 41 y 43)"),
         new(GastoBioquimico, "Gasto bioquímico", false, 0.9702m, "Prestaciones bioquímicas (capítulo 66)"),
         new(GastoOdontologico, "Gasto odontológico", false, 0.1715m, "Odontología (nomenclador odontológico ON)"),
-        new(GastoProtesis, "Gasto odont. prótesis", false, 0.2528m, "Prótesis odontológicas"),
+        new(GastoProtesis, "Gasto odont. prótesis", false, 0.2548m, "Prótesis odontológicas (el PDF imprime 0,2528 pero sus importes usan 0,2548)"),
         new(OtrosGastos, "Otros gastos", false, 0.1226m, "Estudios especializados (capítulos 14 a 43)"),
     };
 

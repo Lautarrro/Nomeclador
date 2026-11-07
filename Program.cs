@@ -100,6 +100,28 @@ var app = builder.Build();
 app.UseForwardedHeaders();
 await Inicializador.EjecutarAsync(app.Services, app.Logger);
 
+// Herramienta: dotnet run -- resetear-admin [usuario]
+// Genera una clave temporal nueva (se pide cambiarla al ingresar) y la muestra en la consola.
+if (args.Length > 0 && args[0] == "resetear-admin")
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDb>();
+    var usuarios = scope.ServiceProvider.GetRequiredService<ServicioUsuarios>();
+    var nombre = (args.Length > 1 ? args[1] : "admin").Trim().ToLower();
+    var u = await db.Usuarios.FirstOrDefaultAsync(x => x.NombreUsuario == nombre);
+    if (u is null)
+    {
+        Console.Error.WriteLine($"No existe el usuario '{nombre}'.");
+        return 1;
+    }
+    var clave = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(9)).Replace('/', 'x').Replace('+', 'y');
+    usuarios.FijarClave(u, clave, temporal: true);
+    u.Activo = true;
+    await db.SaveChangesAsync();
+    Console.WriteLine($"=== Nueva clave temporal: {u.NombreUsuario} / {clave}  (se pide cambiarla al ingresar) ===");
+    return 0;
+}
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");

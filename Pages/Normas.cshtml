@@ -1,0 +1,99 @@
+@page
+@using Nomenclador.Web.Servicios
+@{
+    ViewData["Title"] = "Normas";
+}
+
+<div class="row g-3">
+    <div class="col-lg-3 no-imprimir">
+        <div class="tarjeta indice-normas">
+            <label for="buscar-norma" class="form-label small mb-1">Buscar en las normas</label>
+            <input id="buscar-norma" type="search" class="form-control form-control-sm mb-2" placeholder="ej. ayudantes · 34 · urgente" autocomplete="off" />
+            <div class="small text-muted mb-2" id="normas-contador" aria-live="polite"></div>
+            <nav aria-label="Índice de normas">
+                @foreach (var parte in Normas.Partes)
+                {
+                    <div class="fw-semibold small mt-2"><a href="#@Normas.Ancla(parte)">@Normas.Titulo(parte.Nombre)</a></div>
+                    <ul class="list-unstyled small mb-0">
+                        @foreach (var n in Normas.Todas.Where(n => n.ParteClave == parte.Clave))
+                        {
+                            <li data-indice="@Normas.Ancla(n)"><a href="#@Normas.Ancla(n)"><span class="codigo">@n.Codigo.Replace("NORMA BIOQ ", "Nº ")</span> @Normas.Titulo(n.Titulo)</a></li>
+                        }
+                    </ul>
+                }
+            </nav>
+        </div>
+    </div>
+    <div class="col-lg-9">
+        <div class="tarjeta mb-3">
+            <h1 class="h4 mb-1">Normas particulares, generales y bioquímicas</h1>
+            <p class="small text-muted mb-0">Transcripción de las págs. 159–167 del Nomenclador Nacional. Las <em>ampliaciones de la norma</em> se muestran en cursiva. Desde Buscar, cada capítulo o práctica enlaza a las normas que le aplican.</p>
+        </div>
+        @foreach (var parte in Normas.Partes)
+        {
+            <h2 class="h5 mt-3 titulo-parte" id="@Normas.Ancla(parte)">@Normas.Titulo(parte.Nombre)</h2>
+            @foreach (var n in Normas.Todas.Where(n => n.ParteClave == parte.Clave))
+            {
+                <article class="tarjeta mb-3 norma" id="@Normas.Ancla(n)" data-texto="@Normas.TextoBusqueda(n)">
+                    <header class="d-flex flex-wrap align-items-baseline gap-2 mb-2">
+                        <h3 class="h6 mb-0"><span class="codigo">@(n.Codigo.StartsWith("NORMA BIOQ") ? n.Codigo.Replace("NORMA BIOQ ", "Norma bioquímica Nº ") : "Código " + n.Codigo)</span> · @Normas.Titulo(n.Titulo)</h3>
+                        <span class="small text-muted ms-auto">pág. @n.Pagina del PDF</span>
+                    </header>
+                    @if (n.Aplica.Length > 0)
+                    {
+                        <p class="small mb-2">
+                            Aplica a:
+                            @foreach (var pre in n.Aplica.Length > 6 ? new[] { n.Aplica[0] + " a " + n.Aplica[^1] } : n.Aplica)
+                            {
+                                if (pre.Contains(" a "))
+                                {
+                                    <span class="badge text-bg-light border codigo">@pre</span>
+                                }
+                                else
+                                {
+                                    <a class="badge text-bg-light border codigo text-decoration-none" asp-page="/Index" asp-route-q="@pre">@pre</a>
+                                }
+                            }
+                        </p>
+                    }
+                    <div class="texto-norma">@Normas.Html(n.Texto)</div>
+                </article>
+            }
+        }
+        <p class="text-muted small" id="normas-vacio" hidden>No hay normas que coincidan con la búsqueda.</p>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(() => {
+    const input = document.getElementById('buscar-norma');
+    const normas = [...document.querySelectorAll('.norma')];
+    const contador = document.getElementById('normas-contador');
+    const vacio = document.getElementById('normas-vacio');
+    const normalizar = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    function filtrar() {
+        const palabras = normalizar(input.value).split(/\s+/).filter(Boolean);
+        let visibles = 0;
+        for (const n of normas) {
+            const ok = palabras.every(p => n.dataset.texto.includes(p));
+            n.hidden = !ok;
+            const item = document.querySelector(`[data-indice="${n.id}"]`);
+            if (item) item.hidden = !ok;
+            if (ok) visibles++;
+        }
+        document.querySelectorAll('.titulo-parte').forEach(h => {
+            let el = h.nextElementSibling, alguna = false;
+            while (el && el.classList.contains('norma')) { if (!el.hidden) alguna = true; el = el.nextElementSibling; }
+            h.hidden = !alguna;
+        });
+        contador.textContent = palabras.length ? `${visibles} de ${normas.length} normas` : '';
+        vacio.hidden = visibles > 0;
+    }
+    input.addEventListener('input', filtrar);
+    // Si se llega con #ancla, resaltar la norma.
+    const destino = location.hash && document.getElementById(location.hash.slice(1));
+    if (destino && destino.classList.contains('norma')) destino.classList.add('norma-destacada');
+})();
+</script>
+}

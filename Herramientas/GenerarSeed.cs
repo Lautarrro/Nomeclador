@@ -44,6 +44,21 @@ public static class GenerarSeed
         var cs = SeedWriter.Generar(r.Secciones, r.Grupos, r.Practicas, "data/raw/*.txt");
         File.WriteAllText(salida, cs, new System.Text.UTF8Encoding(true));
         Console.WriteLine($"OK: {r.Secciones.Count} secciones, {r.Grupos.Count} grupos, {r.Practicas.Count} prácticas -> {salida}");
+
+        // Normas (data/normas/*.md) -> Data/Seed/NormasSeed.cs
+        var carpetaNormas = Path.GetFullPath(Path.Combine(raw, "..", "normas"));
+        if (Directory.Exists(carpetaNormas))
+        {
+            var (partes, normas, avisosNormas) = NormasParser.Leer(carpetaNormas);
+            foreach (var a in avisosNormas) Console.WriteLine("AVISO normas: " + a);
+            var codigos = r.Practicas.Select(p => p.Codigo).ToList();
+            foreach (var pre in normas.SelectMany(n => n.Aplica).Concat(partes.SelectMany(p => p.Aplica)).Distinct())
+                if (!codigos.Any(c => c == pre || c.StartsWith(pre + ".")))
+                    Console.WriteLine($"AVISO normas: el prefijo '{pre}' no coincide con ninguna práctica");
+            var salidaNormas = Path.Combine(Path.GetDirectoryName(salida)!, "NormasSeed.cs");
+            File.WriteAllText(salidaNormas, NormasParser.GenerarCs(partes, normas), new System.Text.UTF8Encoding(true));
+            Console.WriteLine($"OK: {partes.Count} partes, {normas.Count} normas -> {salidaNormas}");
+        }
         return 0;
     }
 

@@ -28,6 +28,7 @@
                             <li class="nav-item"><a class="nav-link @(pagina == "/Index" ? "active" : "")" asp-page="/Index">Buscar</a></li>
                             <li class="nav-item"><a class="nav-link @Activo("/Calculadora")" asp-page="/Calculadora">Calculadora <span class="badge bg-light text-dark" id="contador-carrito"></span></a></li>
                             <li class="nav-item"><a class="nav-link @Activo("/Foro")" asp-page="/Foro/Index">Foro</a></li>
+                            <li class="nav-item"><a class="nav-link @Activo("/Normas")" asp-page="/Normas">Normas</a></li>
                             <li class="nav-item"><a class="nav-link @Activo("/Info")" asp-page="/Info">Cómo se calcula</a></li>
                             @if (User.EsAdmin())
                             {

@@ -90,6 +90,17 @@
                         grupoActual = p.GrupoCodigo;
                         <tr class="encabezado-grupo"><td colspan="8">@p.GrupoCodigo · @p.Grupo?.Nombre <span class="text-muted fw-normal small">(@p.Grupo?.Seccion?.Nombre)</span>
                             @if (!string.IsNullOrEmpty(p.Grupo?.Nota)) { <div class="nota fw-normal mt-1">@p.Grupo.Nota</div> }
+                            @{ var normasGrupo = Normas.Para(p.GrupoCodigo); }
+                            @if (normasGrupo.Count > 0)
+                            {
+                                <div class="nota enlaces-normas mt-1">Normas:
+                                    @for (var i = 0; i < normasGrupo.Count; i++)
+                                    {
+                                        var n = normasGrupo[i];
+                                        <a href="@(Url.Page("/Normas"))#@n.Ancla">@(n.Codigo.Length > 0 && !n.Codigo.StartsWith("NORMA") ? n.Codigo + " " : "")@n.Titulo</a>@(i < normasGrupo.Count - 1 ? " · " : "")
+                                    }
+                                </div>
+                            }
                         </td></tr>
                     }
                     var total = Calculadora.TotalRapido(p, Model.Valores);
@@ -101,6 +112,10 @@
                         </td>
                         <td>
                             @p.Descripcion
+                            @foreach (var n in Normas.Para(p.Codigo, p.GrupoCodigo))
+                            {
+                                <div class="nota mt-1"><a href="@(Url.Page("/Normas"))#@n.Ancla">Norma @n.Codigo: @n.Titulo</a></div>
+                            }
                             @if (!string.IsNullOrEmpty(p.Nota))
                             {
                                 <details class="nota mt-1"><summary>Nota / norma</summary>@p.Nota</details>

@@ -51,3 +51,15 @@ body { background: #f6f7f9; }
   .solo-imprimir { display: block !important; }
 }
 .solo-imprimir { display: none; }
+
+/* Normas */
+.indice-normas { position: sticky; top: 1rem; max-height: calc(100vh - 2rem); overflow-y: auto; }
+.indice-normas li { padding: .1rem 0; }
+.indice-normas a { text-decoration: none; }
+.norma { scroll-margin-top: 1rem; }
+.norma-destacada { border-color: var(--color-marca); box-shadow: 0 0 0 .15rem rgba(31, 78, 121, .25); }
+.texto-norma p { margin-bottom: .6rem; }
+.texto-norma ul { margin-bottom: .6rem; }
+.texto-norma .ampliacion { border-left: 3px solid var(--color-marca); padding-left: .75rem; color: #333; }
+.enlaces-normas a { font-weight: normal; }
+@media print { .indice-normas { display: none; } }

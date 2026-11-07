@@ -31,7 +31,7 @@ public partial class PracticaEditarModel(AppDb db) : PageModel
     public List<Grupo> Grupos { get; set; } = new();
     public bool EsNueva => F.Id == 0;
 
-    [GeneratedRegex(@"^(\d{2}|OD|ON)\.\d{2}\.\d{2,3}[a-z]?$")]
+    [GeneratedRegex(@"^(\d{2}|OD|ON)(\.\d{2}){1,2}\.\d{2,3}[a-z]?$")]
     private static partial Regex PatronCodigo();
 
     private async Task CargarListasAsync() =>

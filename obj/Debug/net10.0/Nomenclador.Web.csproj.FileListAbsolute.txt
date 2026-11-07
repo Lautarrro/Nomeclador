@@ -134,7 +134,6 @@ C:\Users\mil99\OneDrive\Escritorio\ProyectoLa\Nomenclador\src\Nomenclador.Web\ob
 C:\Users\mil99\OneDrive\Escritorio\ProyectoLa\Nomenclador\src\Nomenclador.Web\obj\Debug\net10.0\rjsmrazor.dswa.cache.json
 C:\Users\mil99\OneDrive\Escritorio\ProyectoLa\Nomenclador\src\Nomenclador.Web\obj\Debug\net10.0\rjsmcshtml.dswa.cache.json
 C:\Users\mil99\OneDrive\Escritorio\ProyectoLa\Nomenclador\src\Nomenclador.Web\obj\Debug\net10.0\scopedcss\bundle\Nomenclador.Web.styles.css
-C:\Users\mil99\OneDrive\Escritorio\ProyectoLa\Nomenclador\src\Nomenclador.Web\obj\Debug\net10.0\compressed\2ptog03maa-{0}-4qx4ncnzxo-4qx4ncnzxo.gz
 C:\Users\mil99\OneDrive\Escritorio\ProyectoLa\Nomenclador\src\Nomenclador.Web\obj\Debug\net10.0\compressed\d1yqrowaym-{0}-61n19gt1b8-61n19gt1b8.gz
 C:\Users\mil99\OneDrive\Escritorio\ProyectoLa\Nomenclador\src\Nomenclador.Web\obj\Debug\net10.0\compressed\z088sbasl0-{0}-of6d74kn9q-of6d74kn9q.gz
 C:\Users\mil99\OneDrive\Escritorio\ProyectoLa\Nomenclador\src\Nomenclador.Web\obj\Debug\net10.0\compressed\da1697mzvv-{0}-bqjiyaj88i-bqjiyaj88i.gz
@@ -207,3 +206,5 @@ C:\Users\mil99\OneDrive\Escritorio\ProyectoLa\Nomenclador\src\Nomenclador.Web\ob
 C:\Users\mil99\OneDrive\Escritorio\ProyectoLa\Nomenclador\src\Nomenclador.Web\obj\Debug\net10.0\Nomenclador.Web.pdb
 C:\Users\mil99\OneDrive\Escritorio\ProyectoLa\Nomenclador\src\Nomenclador.Web\obj\Debug\net10.0\Nomenclador.Web.genruntimeconfig.cache
 C:\Users\mil99\OneDrive\Escritorio\ProyectoLa\Nomenclador\src\Nomenclador.Web\obj\Debug\net10.0\ref\Nomenclador.Web.dll
+C:\Users\mil99\OneDrive\Escritorio\ProyectoLa\Nomenclador\src\Nomenclador.Web\obj\Debug\net10.0\Nomenclador.Web.sourcelink.json
+C:\Users\mil99\OneDrive\Escritorio\ProyectoLa\Nomenclador\src\Nomenclador.Web\obj\Debug\net10.0\compressed\2ptog03maa-{0}-5u2gxqbdbe-5u2gxqbdbe.gz

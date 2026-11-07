@@ -8,6 +8,7 @@ using Nomenclador.Web.Data;
 using Nomenclador.Web.Data.Seed;
 using Nomenclador.Web.Herramientas;
 using Nomenclador.Web.Servicios;
+using Microsoft.AspNetCore.HttpOverrides;
 
 // Herramienta: regenerar Data/Seed/NomencladorSeed.cs desde data/raw/*.txt
 if (args.Length > 0 && args[0] == "generar-seed")
@@ -20,11 +21,20 @@ System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalizat
 System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
 
 var builder = WebApplication.CreateBuilder(args);
+var appData = Environment.GetEnvironmentVariable("APP_DATA_PATH")
+              ?? Path.Combine(builder.Environment.ContentRootPath, "App_Data");
 
-var appData = Path.Combine(builder.Environment.ContentRootPath, "App_Data");
 Directory.CreateDirectory(appData);
+
+var clavesPath = Path.Combine(appData, "claves");
+Directory.CreateDirectory(clavesPath);
+
 var cadena = builder.Configuration.GetConnectionString("Nomenclador")
              ?? $"Data Source={Path.Combine(appData, "nomenclador.db")};Default Timeout=30;Cache=Shared";
+// var appData = Path.Combine(builder.Environment.ContentRootPath, "App_Data");
+// Directory.CreateDirectory(appData);
+// var cadena = builder.Configuration.GetConnectionString("Nomenclador")
+//              ?? $"Data Source={Path.Combine(appData, "nomenclador.db")};Default Timeout=30;Cache=Shared";
 
 // Acentos y ñ sin escapar en el HTML generado.
 builder.Services.Configure<Microsoft.Extensions.WebEncoders.WebEncoderOptions>(o =>
@@ -37,9 +47,8 @@ builder.Services.AddScoped<ServicioUsuarios>();
 
 // Las claves de cookies se guardan en disco: las sesiones sobreviven a reinicios del servidor.
 builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(appData, "claves")))
+    .PersistKeysToFileSystem(new DirectoryInfo(clavesPath))
     .SetApplicationName("Nomenclador");
-
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(o =>
     {
@@ -77,9 +86,18 @@ builder.Services.AddRazorPages(o =>
     o.Conventions.AllowAnonymousToPage("/Error");
 });
 builder.Services.AddAuthorizationBuilder().AddPolicy("Admin", p => p.RequireRole(Roles.Admin));
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto;
 
+    // La aplicación estará detrás del proxy de Render.
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 var app = builder.Build();
-
+app.UseForwardedHeaders();
 await Inicializador.EjecutarAsync(app.Services, app.Logger);
 
 if (!app.Environment.IsDevelopment())

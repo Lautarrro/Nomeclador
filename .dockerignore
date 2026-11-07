@@ -1,0 +1,12 @@
+
+bin/
+obj/
+.vs/
+.git/
+.vscode/
+*.user
+*.suo
+*.db
+*.sqlite
+*.sqlite3
+.env
